@@ -14,6 +14,16 @@
 
 #include <ChronoSync/socket.hpp>
 
+#include <mutex>
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+std::mutex systemInfoWriteMutex;
+
 using namespace ndn;
 using namespace repo;
 
@@ -44,6 +54,18 @@ public:
 public:
   void run()
   {
+    initializeRepoNamesAndDeviceNames();
+
+    auto i = m_repoInfo.begin();
+    for (i; i != m_repoInfo.end(); i++) {
+      std::cout << "Repo name: " << i->first << std::endl;
+
+      auto j = i->second.begin();
+      for (j; j != i->second.end(); j++) {
+	std::cout << *j << std::endl;
+      }
+    }
+    
     initializeSyncRepo();
 
     try {
@@ -183,6 +205,25 @@ protected:
                            nullptr,
                            std::bind(&ChronoApp::onRepoNack, this, _1, _2),
                            std::bind(&ChronoApp::onRepoTimeout, this, _1));
+
+    // assumes that names will be formatted like this:
+    // <pubsub prefix>/<repo name>/<device name>/<time stamp>/<seq num>
+    std::string repoName = dataName.get(-4).toUri();
+    std::string deviceName = dataName.get(-3).toUri();
+
+    std::cout << "Got chronosync update for repo " << repoName << ", device " << deviceName << std::endl;
+    
+    auto findRepo = m_repoInfo.find(repoName);
+    
+    if (findRepo == m_repoInfo.end()) {
+      std::cout << "Got a chronosync update for a repo that we have not seen before, adding it to our list of repos." << std::endl;
+      insertNewRepoToRepoInfo(repoName);
+      insertNewDeviceToRepoInfo(repoName, deviceName);
+    }
+    else if (findRepo->second.find(deviceName) == findRepo->second.end()) {
+      std::cout << "Got a chronosync update for a device that we have not seen before, adding it to our list of devices." << std::endl;
+      insertNewDeviceToRepoInfo(repoName, deviceName);
+    }
   }
 
     void
@@ -221,6 +262,115 @@ protected:
     std::cout << "Got an update from repo about data we got from another repo, not publishing." << std::endl;
   }
 
+  void initializeRepoNamesAndDeviceNames() {
+    std::string repoListPath = m_systemInfoPath + "/repoList.txt";
+    std::ifstream repoListFile(repoListPath.c_str());
+    if (repoListFile.good()) {
+      std::string repoName;
+      std::string deviceName;
+      while (std::getline(repoListFile, repoName))
+	{
+	  m_repoInfo.emplace(repoName, std::unordered_set<std::string>());
+	  
+	  auto repoEntry = m_repoInfo.find(repoName);
+	  
+	  std::string repoDeviceListFileName = repoName + ".txt";
+	  
+	  //need code here to load the contents of a file with that repo name, or create one if it doesn't exist
+	  std::ifstream repoDeviceListFile(repoDeviceListFileName.c_str());
+	  
+	  if (repoDeviceListFile.good()) {
+	    while (std::getline(repoDeviceListFile, deviceName)) {
+	      repoEntry->second.insert(deviceName);
+	    }
+	  }
+	  else {
+	    std::ofstream outfile (m_systemInfoPath + "/" + repoName + ".txt");
+	    outfile.close();
+	  }
+	  
+	  repoDeviceListFile.close();
+	}
+    }
+    
+    repoListFile.close();
+  }
+  
+  void insertNewRepoToRepoInfo(std::string repoName) {
+    std::string repoListPath = m_systemInfoPath + "/repoList.txt"; 
+    auto find = m_repoInfo.find(repoName);
+    if (find != m_repoInfo.end()) {
+      std::cout << "The repo you were trying to insert was already in the repo list." << std::endl;
+      return;
+    }
+    
+    std::ofstream out;
+    
+    // std::ios::app is the open mode "append" meaning
+    // new data will be written to the end of the file.
+    out.open(repoListPath.c_str(), std::ios::app);
+    
+    if (out.good()) {
+      out << repoName;
+      out << "\n";
+      
+      out.close();
+    }
+    else {
+      std::cout << "Failed to open repo list file for writing." << std::endl;
+    }
+    
+    m_repoInfo.emplace(repoName, std::unordered_set<std::string>());
+    
+    std::ofstream outfile (m_systemInfoPath + "/" + repoName + ".txt");
+    outfile.close();
+    
+  }
+  
+  void insertNewDeviceToRepoInfo(std::string repoName, std::string deviceName) {
+    
+    auto find = m_repoInfo.find(repoName);
+    if (find == m_repoInfo.end()) {
+      std::cout << "The repo that you are trying to insert a device for was not found." << std::endl;
+      return;
+    }
+    
+    auto findDevice = find->second.find(deviceName);
+    if (findDevice != find->second.end()) {
+      std::cout << "The device you were trying to insert was already recorded for that repo." << std::endl;
+      return;
+    }
+    
+    find->second.insert(deviceName);
+    
+    std::string repoDeviceListFileName = repoName + ".txt";
+    
+    std::ifstream repoDeviceListFile(repoDeviceListFileName.c_str());
+    
+    if (repoDeviceListFile.good()) {
+    }
+    else {
+      std::ofstream outfile (m_systemInfoPath + "/" + repoName + ".txt");
+      outfile.close();
+    }
+    
+    repoDeviceListFile.close(); 
+    
+    std::ofstream out;
+    
+    out.open(repoDeviceListFileName.c_str(), std::ios::app);
+    
+    if (out.good()) {
+      out << deviceName;
+      out << "\n";
+      
+      out.close();
+    }
+    else {
+      std::cout << "Failed to open repo's device list file for writing." << std::endl;
+    }
+  }
+  
 protected:
   Name m_pubSubGroupPrefix;
   Name m_repoName;
@@ -240,6 +390,11 @@ protected:
   util::signal::Connection m_connection;
   std::vector<Name> nameVector;
   ndn::security::CommandInterestSigner m_cmdSigner;
+
+  std::string m_systemInfoPath = "/home/pi/repo-ng/systemInfo";
+
+  std::unordered_map<std::string, typename std::unordered_set<std::string>> m_repoInfo;
+
 };
 
 int main(int argc, char* argv[]) {
