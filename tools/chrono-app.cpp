@@ -214,7 +214,7 @@ protected:
     if (comp.get(-2).toUri() == "systemInfo") {
 	std::cout << "ChronoSync publish of system info: " << data.getName() << std::endl;
 	
-        m_chronoSyncSocket->publishData(data.getName().wireEncode(),
+        m_chronoSyncSocket->publishData(data.getContent().wireEncode(),
                                         time::milliseconds(1000),
                                         m_chronoSyncUserPrefix);
         return;
