@@ -68,6 +68,7 @@ protected:
   void
   onChronoSyncUpdate(const std::vector<chronosync::MissingDataInfo>& v) {
     for (auto ms : v) {
+      Name namePrefix = ms.session.getPrefix(-1);
       std::string prefix = ms.session.getPrefix(-1).toUri();
 
       // Check for our own update like NLSR
@@ -75,6 +76,10 @@ protected:
         continue;
       }
 
+      if (prefix.get(-1).toUri() == "systemInfo") {
+	std::cout << "Got chronosync update about system info." << std::endl;
+      }
+      
       int seq1 = ms.low;
       int seq2 = ms.high;
 
@@ -205,6 +210,16 @@ protected:
     // Repo makes sure it streams only its own update
     Name comp = data.getName();
     std::cout << comp << std::endl;
+
+    if (comp.get(-2).toUri() == "systemInfo") {
+	std::cout << "ChronoSync publish of system info: " << data.getName() << std::endl;
+	
+        m_chronoSyncSocket->publishData(data.getName().wireEncode(),
+                                        time::milliseconds(1000),
+                                        m_chronoSyncUserPrefix);
+        return;
+    }      
+    
     for (size_t i = 0; i < comp.size(); i++) {
       if (comp.at(i) == m_repoName.at(0)) {
         // update is from our own repo, safe to publish
