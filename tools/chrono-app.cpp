@@ -125,7 +125,7 @@ protected:
     _LOG_INFO("Nack: " << interest.getName() << " " << interest.getNonce());
     std::cout << "Nack: " << interest.getName() << " " << interest.getNonce() << std::endl;
   }
-
+ 
   void
   onTimeout(const Interest& interest, int nRetries)
   {
@@ -179,9 +179,29 @@ protected:
 
     m_face.expressInterest(interest,
                            nullptr,
-                           nullptr, // Nack
-                           nullptr);
+                           std::bind(&ChronoApp::onRepoNack, this, _1, _2),
+                           std::bind(&ChronoApp::onRepoTimeout, this, _1));
   }
+
+    void
+  onRepoNack(const Interest& interest, const lp::Nack& nack)
+  {
+    _LOG_INFO("Nack: " << interest.getName() << " " << interest.getNonce());
+    std::cout << "Nack: " << interest.getName() << " " << interest.getNonce() << std::endl;
+  }
+ 
+  void
+  onRepoTimeout(const Interest& interest)
+  {
+    _LOG_INFO("Timeout for interest: " << interest.getName() << " " << interest.getNonce());
+    std::cout << "Timeout for interest: " << interest.getName() << " " << interest.getNonce() << std::endl;
+    if (nRetries <= 0)
+      return;
+
+    Interest newNonceInterest(interest);
+    newNonceInterest.refreshNonce();
+  }
+
 
   void
   onUpdateFromRepo(const Data& data) {
