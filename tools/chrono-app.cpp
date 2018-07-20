@@ -45,6 +45,13 @@ public:
   , m_subscriber(m_face, Name("localhost").append("datastream").append(repoName).append("insert"))
   , m_cmdSigner(m_keyChain)
   {
+    Name systemInfoName(pubSubGroupPrefix);
+    systemInfoName.append("systemInfo");
+    m_face.setInterestFilter(systemInfoName.toUri(),
+			     bind(&ChronoApp::onSystemInfoInterest, this, _1, _2),
+			     RegisterPrefixSuccessCallback(),
+			     bind(&ChronoApp::onRegisterFailed, this, _1, _2));
+    std::cout << "Registered prefix " << systemInfoName.toUri() << std::endl;
   }
 
   ~ChronoApp() {
@@ -164,6 +171,54 @@ protected:
                            std::bind(&ChronoApp::onNack, this, _1, _2, nRetries-1),
                            std::bind(&ChronoApp::onTimeout, this, _1, nRetries-1)
                            );
+  }
+
+  void
+  onSystemInfoInterest(const InterestFilter& filter, const Interest& interest)
+  {
+    std::cout << "Got system info interest." << std::endl;
+
+    // Create new name, based on Interest's name
+    Name dataName(interest.getName());
+
+    static const std::string content = generateSystemInfo();
+    
+    // Create Data packet
+    shared_ptr<Data> data = make_shared<Data>();
+    data->setName(dataName);
+    data->setFreshnessPeriod(10_s); // 10 seconds
+    data->setContent(reinterpret_cast<const uint8_t*>(content.data()), content.size());
+    
+    // Sign Data packet with default identity
+    m_keyChain.sign(*data);
+    // m_keyChain.sign(data, <identityName>);
+    // m_keyChain.sign(data, <certificate>);
+    
+    m_face.put(*data);
+  }
+
+  std::string generateSystemInfo() {
+    std::string systemInfoString = "";
+
+    auto i = m_repoInfo.begin();
+    for (i; i != m_repoInfo.end(); i++) {
+      systemInfoString += i->first;
+      systemInfoString += "\n";
+      auto j = i->second.begin();
+      for (j; j != i->second.end(); j++) {
+	systemInfoString += " " + *j + "\n";
+      }
+    }
+
+    return systemInfoString;
+  }
+  
+  void
+  onRegisterFailed(const Name& prefix, const std::string& reason)
+  {
+    std::cerr << "ERROR: Failed to register prefix \""
+	      << prefix << "\" in local hub's daemon (" << reason << ")"
+	      << std::endl;
   }
 
   void
