@@ -80,6 +80,7 @@ protected:
 
       for (int i = seq1; i <= seq2; i++) {
         _LOG_INFO("ChronoSync Update: " << prefix << "/" << i);
+	std::cout << "ChronoSync update: " << ms.session.toUri() << std::endl;
         fetchData(ms.session, i, 3);
       }
     }
@@ -95,7 +96,8 @@ protected:
     Interest interest(interestName);
     //interest.setMustBeFresh(true);
     _LOG_INFO("Fetching data for : " << interest.getName() << " " << interest.getNonce());
-
+    std::cout << "Fetching data for: " << interest.getName() << " " << interest.getNonce() << std::endl;
+    
     m_face.expressInterest(interest,
                            std::bind(&ChronoApp::onData, this, _1, _2),
                            std::bind(&ChronoApp::onNack, this, _1, _2, nRetries),
@@ -113,6 +115,7 @@ protected:
     uint32_t seq = ds.get(ds.size()-1).toNumber();
 
     _LOG_INFO("ChronoSync DS Update: " << ds.getPrefix(-1) << "/" << seq);
+    std::cout << "ChronoSync DS Update: " << ds << std::endl;
     insertIntoRepo(ds);
   }
 
@@ -120,12 +123,14 @@ protected:
   onNack(const Interest& interest, const lp::Nack& nack, int nRetries)
   {
     _LOG_INFO("Nack: " << interest.getName() << " " << interest.getNonce());
+    std::cout << "Nack: " << interest.getName() << " " << interest.getNonce() << std::endl;
   }
 
   void
   onTimeout(const Interest& interest, int nRetries)
   {
     _LOG_INFO("Timeout for interest: " << interest.getName() << " " << interest.getNonce());
+    std::cout << "Timeout for interest: " << interest.getName() << " " << interest.getNonce() << std::endl;
     if (nRetries <= 0)
       return;
 
@@ -153,6 +158,7 @@ protected:
     }
 
     _LOG_INFO("Inserting data into repo: " << dataName);
+    std::cout << "Inserting data into repo: " << dataName << std::endl;
 
     //nameVector.push_back(dataName);
 
@@ -185,13 +191,15 @@ protected:
       if (comp.at(i) == m_repoName.at(0)) {
         // update is from our own repo, safe to publish
         _LOG_INFO("ChronoSync Publish: " << data.getName());
-
+	std::cout << "ChronoSync publish: " << data.getName() << std::endl;
+	
         m_chronoSyncSocket->publishData(data.getName().wireEncode(),
                                         time::milliseconds(1000),
                                         m_chronoSyncUserPrefix);
         return;
       }
     }
+    std::cout << "Got an update from repo about data we got from another repo, not publishing." << std::endl;
   }
 
 protected:
