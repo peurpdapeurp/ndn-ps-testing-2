@@ -146,6 +146,7 @@ protected:
 
   void
   insertIntoRepo(const Name& dataName) {
+    /*
     try {
       std::string dataType = dataName.get(-3).toUri();
       if (dataType == "temperature" || dataType == "light" || dataType == "humidity" || dataType == "pressure" || dataType == "resistance") {}
@@ -157,6 +158,7 @@ protected:
       std::cout << e.what() << std::endl;
       return;
     }
+    */
 
     _LOG_INFO("Inserting data into repo: " << dataName);
     std::cout << "Inserting data into repo: " << dataName << std::endl;
