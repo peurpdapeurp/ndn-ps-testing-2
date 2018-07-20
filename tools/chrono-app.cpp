@@ -147,9 +147,10 @@ protected:
   void
   insertIntoRepo(const Name& dataName) {
     try {
-      std::string dataType = dataName.get(-3).toUri();
+      std::string dataType = dataName.get(-3).toUri().substr(1);
       if (dataType == "temperature" || dataType == "light" || dataType == "humidity" || dataType == "pressure" || dataType == "resistance") {}
       else {
+	std::cout << "Data name's third from last component was: " << dataName.get(-3).toUri().substr(1) << ", returning..." << std::endl;
         return;
       }
     } catch (const std::exception& e) {
