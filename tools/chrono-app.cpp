@@ -147,8 +147,8 @@ protected:
   void
   insertIntoRepo(const Name& dataName) {
     try {
-      std::string dataType = dataName.at(dataName.size()-2).toUri();
-      if (dataType == "temperature" || dataType == "light" || dataType == "humidity") {}
+      std::string dataType = dataName.get(-3).toUri();
+      if (dataType == "temperature" || dataType == "light" || dataType == "humidity" || dataType == "pressure" || dataType == "resistance") {}
       else {
         return;
       }
