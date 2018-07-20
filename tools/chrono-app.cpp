@@ -76,7 +76,7 @@ protected:
         continue;
       }
 
-      if (prefix.get(-1).toUri() == "systemInfo") {
+      if (namePrefix.get(-1).toUri() == "systemInfo") {
 	std::cout << "Got chronosync update about system info." << std::endl;
       }
       
