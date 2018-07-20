@@ -195,11 +195,6 @@ protected:
   {
     _LOG_INFO("Timeout for interest: " << interest.getName() << " " << interest.getNonce());
     std::cout << "Timeout for interest: " << interest.getName() << " " << interest.getNonce() << std::endl;
-    if (nRetries <= 0)
-      return;
-
-    Interest newNonceInterest(interest);
-    newNonceInterest.refreshNonce();
   }
 
 
