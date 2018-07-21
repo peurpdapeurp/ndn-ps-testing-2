@@ -304,9 +304,9 @@ protected:
 
   void updateRepoInfo(Name dataName) {
     // assumes that names will be formatted like this:
-    // <pubsub prefix>/<repo name>/<device name>/<time stamp>/<seq num>
-    std::string repoName = dataName.get(-4).toUri();
-    std::string deviceName = dataName.get(-3).toUri();
+    // <pubsub prefix>/<repo name>/<device name>/<read type>/<time stamp>/<seq num>
+    std::string repoName = dataName.get(-5).toUri();
+    std::string deviceName = dataName.get(-4).toUri();
 
     std::cout << "Got chronosync update for repo " << repoName << ", device " << deviceName << std::endl;
     
