@@ -261,24 +261,6 @@ protected:
                            std::bind(&ChronoApp::onRepoNack, this, _1, _2),
                            std::bind(&ChronoApp::onRepoTimeout, this, _1));
 
-    // assumes that names will be formatted like this:
-    // <pubsub prefix>/<repo name>/<device name>/<time stamp>/<seq num>
-    std::string repoName = dataName.get(-4).toUri();
-    std::string deviceName = dataName.get(-3).toUri();
-
-    std::cout << "Got chronosync update for repo " << repoName << ", device " << deviceName << std::endl;
-    
-    auto findRepo = m_repoInfo.find(repoName);
-    
-    if (findRepo == m_repoInfo.end()) {
-      std::cout << "Got a chronosync update for a repo that we have not seen before, adding it to our list of repos." << std::endl;
-      insertNewRepoToRepoInfo(repoName);
-      insertNewDeviceToRepoInfo(repoName, deviceName);
-    }
-    else if (findRepo->second.find(deviceName) == findRepo->second.end()) {
-      std::cout << "Got a chronosync update for a device that we have not seen before, adding it to our list of devices." << std::endl;
-      insertNewDeviceToRepoInfo(repoName, deviceName);
-    }
   }
 
     void
@@ -315,8 +297,31 @@ protected:
       }
     }
     std::cout << "Got an update from repo about data we got from another repo, not publishing." << std::endl;
+
+    updateRepoInfo(comp);
   }
 
+  void updateRepoInfo(Name dataName) {
+    // assumes that names will be formatted like this:
+    // <pubsub prefix>/<repo name>/<device name>/<time stamp>/<seq num>
+    std::string repoName = dataName.get(-4).toUri();
+    std::string deviceName = dataName.get(-3).toUri();
+
+    std::cout << "Got chronosync update for repo " << repoName << ", device " << deviceName << std::endl;
+    
+    auto findRepo = m_repoInfo.find(repoName);
+    
+    if (findRepo == m_repoInfo.end()) {
+      std::cout << "Got a chronosync update for a repo that we have not seen before, adding it to our list of repos." << std::endl;
+      insertNewRepoToRepoInfo(repoName);
+      insertNewDeviceToRepoInfo(repoName, deviceName);
+    }
+    else if (findRepo->second.find(deviceName) == findRepo->second.end()) {
+      std::cout << "Got a chronosync update for a device that we have not seen before, adding it to our list of devices." << std::endl;
+      insertNewDeviceToRepoInfo(repoName, deviceName);
+    }
+  }
+  
   void initializeRepoNamesAndDeviceNames() {
     std::string repoListPath = m_systemInfoPath + "/repoList.txt";
     std::ifstream repoListFile(repoListPath.c_str());
