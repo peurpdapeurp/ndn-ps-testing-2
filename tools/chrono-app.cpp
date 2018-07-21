@@ -284,6 +284,8 @@ protected:
     Name comp = data.getName();
     std::cout << comp << std::endl;
 
+    updateRepoInfo(comp);
+    
     for (size_t i = 0; i < comp.size(); i++) {
       if (comp.at(i) == m_repoName.at(0)) {
         // update is from our own repo, safe to publish
@@ -298,7 +300,6 @@ protected:
     }
     std::cout << "Got an update from repo about data we got from another repo, not publishing." << std::endl;
 
-    updateRepoInfo(comp);
   }
 
   void updateRepoInfo(Name dataName) {
