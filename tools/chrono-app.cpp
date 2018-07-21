@@ -314,12 +314,16 @@ protected:
     
     if (findRepo == m_repoInfo.end()) {
       std::cout << "Got a chronosync update for a repo that we have not seen before, adding it to our list of repos." << std::endl;
+      systemInfoWriteMutex.lock();
       insertNewRepoToRepoInfo(repoName);
       insertNewDeviceToRepoInfo(repoName, deviceName);
+      systemInfoWriteMutex.unlock();
     }
     else if (findRepo->second.find(deviceName) == findRepo->second.end()) {
       std::cout << "Got a chronosync update for a device that we have not seen before, adding it to our list of devices." << std::endl;
+      systemInfoWriteMutex.lock();
       insertNewDeviceToRepoInfo(repoName, deviceName);
+      systemInfoWriteMutex.unlock();
     }
   }
   
