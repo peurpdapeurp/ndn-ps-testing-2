@@ -38,6 +38,7 @@ public:
   , m_humidityI(Name(m_prefix).append("humidity"))
   , m_pressureI(Name(m_prefix).append("pressure"))
   , m_resistanceI(Name(m_prefix).append("resistance"))
+  , m_occupancyI(Name(m_prefix).append("occupancy"))
   , m_repoPrefix(Name("localhost").append(repoName))
   , m_seqFileName("home/pi/repo-ng/seq/")
   , m_cmdSigner(m_keyChain)
@@ -67,6 +68,9 @@ public:
 
       inputFile >> sensorSeq >> seqNo;
       m_resistanceSeq = seqNo;
+
+      inputFile >> sensorSeq >> seqNo;
+      m_occupancySeq = seqNo;
       
     } else {
       writeSeqToFile();
@@ -80,7 +84,8 @@ public:
     os << "TempSeq " << std::to_string(m_tempSeq) << "\n"
        << "HumidSeq "  << std::to_string(m_humidSeq)  << "\n"
        << "PressureSeq "  << std::to_string(m_pressureSeq) << "\n"
-       << "ResistanceSeq " << std::to_string(m_resistanceSeq);
+       << "ResistanceSeq " << std::to_string(m_resistanceSeq) << "\n"
+       << "OccupancySeq " << std::to_string(m_occupancySeq);
     outputFile << os.str();
     outputFile.close();
   }
@@ -94,10 +99,12 @@ public:
     std::cout << m_humidityI.toUri() << std::endl;
     std::cout << m_pressureI.toUri() << std::endl;
     std::cout << m_resistanceI.toUri() << std::endl;
+    std::cout << m_occupancyI.toUri() << std::endl;
     sendInterest(m_temperatureI);
     sendInterest(m_humidityI);
     sendInterest(m_pressureI);
     sendInterest(m_resistanceI);
+    sendInterest(m_occupancyI);
   }
 
   void
@@ -125,6 +132,10 @@ public:
     else if (interestName == m_resistanceI) {
       interestNameWithTimestampAndSeqNo.appendTimestamp();
       interestNameWithTimestampAndSeqNo.appendNumber(m_resistanceSeq++);
+    }
+    else if (interestName == m_occupancyI) {
+      interestNameWithTimestampAndSeqNo.appendTimestamp();
+      interestNameWithTimestampAndSeqNo.appendNumber(m_occupancySeq++);
     }
 
     writeSeqToFile();
@@ -185,8 +196,8 @@ private:
   // Prefix is the prefix of the data name that the device is listening to
   std::string m_deviceName;
   Name m_prefix;
-  Name m_temperatureI, m_humidityI, m_pressureI, m_resistanceI;
-  uint32_t m_tempSeq = 0, m_humidSeq = 0, m_pressureSeq = 0, m_resistanceSeq = 0;
+  Name m_temperatureI, m_humidityI, m_pressureI, m_resistanceI, m_occupancyI;
+  uint32_t m_tempSeq = 0, m_humidSeq = 0, m_pressureSeq = 0, m_resistanceSeq = 0, m_occupancySeq = 0;
 
   ndn::InMemoryStoragePersistent m_ims;
   ndn::Name m_repoPrefix;

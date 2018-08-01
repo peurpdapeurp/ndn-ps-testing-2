@@ -54,6 +54,9 @@ ReadHandle::onInterest(const Name& prefix, const Interest& interest)
     std::cout << "Got interest for data that we have: " << interest.getName().toUri() << std::endl;
       getFace().put(*data);
   }
+  else {
+    std::cout << "Got interest for data that we didn't have." << std::endl;
+  }
 }
 
 void

@@ -181,12 +181,29 @@ protected:
     // Create new name, based on Interest's name
     Name dataName(interest.getName());
 
-    static const std::string content = generateSystemInfo();
+    std::string systemInfoString = "";
+
+    auto i = m_repoInfo.begin();
+    for (i; i != m_repoInfo.end(); i++) {
+      std::cout << "In generate system info, on repo: " << i->first << std::endl;
+      systemInfoString += i->first;
+      systemInfoString += "\n";
+      auto j = i->second.begin();
+      for (j; j != i->second.end(); j++) {
+	std::cout << "In generate system info, on device: " << *j << std::endl;
+	systemInfoString += " " + *j + "\n";
+      }
+    }
+
+    std::cout << "Generated system info: " << std::endl;
+    std::cout << systemInfoString << std::endl;
+
+    static const std::string content = systemInfoString;
     
     // Create Data packet
     shared_ptr<Data> data = make_shared<Data>();
     data->setName(dataName);
-    data->setFreshnessPeriod(10_s); // 10 seconds
+    data->setFreshnessPeriod(25_ms); // 10 seconds
     data->setContent(reinterpret_cast<const uint8_t*>(content.data()), content.size());
     
     // Sign Data packet with default identity
@@ -202,13 +219,18 @@ protected:
 
     auto i = m_repoInfo.begin();
     for (i; i != m_repoInfo.end(); i++) {
+      std::cout << "In generate system info, on repo: " << i->first << std::endl;
       systemInfoString += i->first;
       systemInfoString += "\n";
       auto j = i->second.begin();
       for (j; j != i->second.end(); j++) {
+	std::cout << "In generate system info, on device: " << *j << std::endl;
 	systemInfoString += " " + *j + "\n";
       }
     }
+
+    std::cout << "Generated system info: " << std::endl;
+    std::cout << systemInfoString << std::endl;
 
     return systemInfoString;
   }
@@ -339,7 +361,7 @@ protected:
 	  
 	  auto repoEntry = m_repoInfo.find(repoName);
 	  
-	  std::string repoDeviceListFileName = repoName + ".txt";
+	  std::string repoDeviceListFileName = m_systemInfoPath + "/" + repoName + ".txt";
 	  
 	  //need code here to load the contents of a file with that repo name, or create one if it doesn't exist
 	  std::ifstream repoDeviceListFile(repoDeviceListFileName.c_str());
@@ -357,9 +379,14 @@ protected:
 	  repoDeviceListFile.close();
 	}
     }
+    else {
+      std::ofstream out(repoListPath);
+      out.close();
+    }
     
     repoListFile.close();
   }
+    
   
   void insertNewRepoToRepoInfo(std::string repoName) {
     std::string repoListPath = m_systemInfoPath + "/repoList.txt"; 
@@ -407,12 +434,19 @@ protected:
     }
     
     find->second.insert(deviceName);
+
+    auto it = find->second.begin();
+    std::cout << "Device names attached to repo " << repoName << std::endl;
+    for (;it != find->second.end(); it++) {
+      std::cout << *it << std::endl;
+    }
     
-    std::string repoDeviceListFileName = repoName + ".txt";
+    std::string repoDeviceListFileName = m_systemInfoPath + "/" + repoName + ".txt";
     
     std::ifstream repoDeviceListFile(repoDeviceListFileName.c_str());
     
     if (repoDeviceListFile.good()) {
+      
     }
     else {
       std::ofstream outfile (m_systemInfoPath + "/" + repoName + ".txt");
